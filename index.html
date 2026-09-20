@@ -1,0 +1,63 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hodge Proof Probe</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0e13;--p:#121722;--p2:#171e2b;--b:#293346;--t:#edf2f7;--m:#91a0b5;--a:#7dd3fc;--g:#86efac;--y:#fde68a;--r:#fca5a5}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:14px system-ui,-apple-system,sans-serif}.wrap{max-width:1100px;margin:auto;padding:14px}.top,.card{background:var(--p);border:1px solid var(--b);border-radius:14px;padding:14px;margin-bottom:10px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center}.title{font-size:20px;font-weight:800}.sub{color:var(--m);font-size:12px}.buttons{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}button{border:1px solid var(--b);background:var(--p2);color:var(--t);border-radius:9px;padding:9px 12px;cursor:pointer}button:hover{border-color:#51617a}button.primary{background:#15364a;border-color:#27627f}button.danger{background:#3a2025}.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.stat{background:var(--p2);border:1px solid var(--b);border-radius:10px;padding:9px}.n{font-size:19px;font-weight:800}.m{color:var(--m);font-size:11px}.cols{display:grid;grid-template-columns:1.1fr .9fr;gap:10px}.row{padding:8px 5px;border-bottom:1px solid var(--b);font-size:12px}.good{border-left:3px solid var(--g);padding-left:8px}.hot{border-left:3px solid var(--y);padding-left:8px}.bad{border-left:3px solid var(--r);padding-left:8px}.scroll{max-height:320px;overflow:auto}.bar{height:7px;background:#222b39;border-radius:5px;overflow:hidden}.fill{height:100%;background:var(--a);width:0}.pill{display:inline-block;border:1px solid var(--b);border-radius:999px;padding:2px 7px;color:var(--m);font-size:10px;margin:2px}.notice{padding:9px;border:1px solid var(--b);background:#101722;border-radius:9px;color:var(--m);font-size:12px}.proof{font-family:ui-monospace,monospace;white-space:pre-wrap;font-size:11px;line-height:1.45}.ok{color:var(--g)}.warn{color:var(--y)}@media(max-width:800px){.grid{grid-template-columns:repeat(3,1fr)}.cols{grid-template-columns:1fr}.top{display:block}}
+</style></head><body><div class="wrap">
+<div class="top"><div><div class="title">🧠 Hodge Proof Probe</div><div class="sub">Ricerca simbolica verificabile — non un generatore di “frasi matematiche”.</div></div><div id="state" class="pill">PAUSA</div></div>
+<div class="card"><div class="notice">Obiettivo: partire da una classe <b>α ∈ H²ᵖ(X,Q) ∩ Hᵖ,ᵖ(X)</b> e cercare una catena verificata che costruisca una combinazione di cicli algebrici con classe α. Una scoperta viene segnalata come <b>candidato</b>; “PROVA” richiede che tutti i passaggi siano verificati dal motore.</div><div class="buttons"><button class="primary" id="go">▶ Avvia</button><button id="pause">⏸ Pausa</button><button id="burst">⚡ 10.000 prove</button><button id="deep">🧬 Deep search</button><button id="export">💾 Esporta</button><button id="import">📥 Importa</button><button class="danger" id="reset">↺ Reset</button><input id="file" type="file" accept="application/json" hidden></div></div>
+<div class="grid"><div class="stat"><div class="n" id="tr">0</div><div class="m">tentativi</div></div><div class="stat"><div class="n" id="un">0</div><div class="m">stati unici</div></div><div class="stat"><div class="n" id="du">0</div><div class="m">duplicati evitati</div></div><div class="stat"><div class="n" id="le">0</div><div class="m">lemmi verificati</div></div><div class="stat"><div class="n" id="ca">0</div><div class="m">candidati</div></div><div class="stat"><div class="n" id="pr">0</div><div class="m">prove verificate</div></div></div>
+<div class="card"><div style="display:flex;justify-content:space-between"><b>Avanzamento della ricerca</b><span class="m" id="rate">0/s</span></div><div class="bar" style="margin-top:8px"><div class="fill" id="fill"></div></div><div class="sub" style="margin-top:7px" id="objective">Ricerca di lemmi che colmino il ponte “Hodge class → algebraic cycle”.</div></div>
+<div class="cols"><div class="card"><b>🏆 Catene migliori</b><div id="best" class="scroll"></div></div><div class="card"><b>🧬 Strategie apprese</b><div id="strategies" class="scroll"></div></div></div>
+<div class="cols"><div class="card"><b>🚨 Eventi importanti</b><div id="events" class="scroll"></div></div><div class="card"><b>📜 Ultima prova</b><div id="proof" class="proof"></div></div></div>
+<div class="card"><b>📡 Log</b><div id="log" class="scroll"></div></div>
+</div>
+<script>
+(()=>{
+const $=id=>document.getElementById(id); const KEY='hodge-proof-probe-v2';
+const S={nodes:{},seen:new Set(),best:[],events:[],log:[],tries:0,unique:0,dup:0,lemmas:0,candidates:0,proofs:0,running:false,weights:{}};
+const concepts=['Hodge class','cycle class','algebraic cycle','Chow group','de Rham class','Betti class','Hodge decomposition','periods','Hodge locus','Hilbert scheme','correspondence','diagonal','Künneth projector','Lefschetz operator','Chern class','intersection product','pushforward','pullback','deformation','specialization','Frobenius','Tate class','étale cohomology','motivic class','Abel–Jacobi'];
+const rules=[
+ ['Hodge decomposition','Hodge class','definition'],['algebraic cycle','cycle class','cycle-class map'],['cycle class','Hodge class','cycle classes are Hodge'],['Chow group','algebraic cycle','definition'],['Chern class','algebraic cycle','Chern classes of algebraic bundles'],['intersection product','algebraic cycle','intersection of cycles'],['correspondence','cycle class','cycle correspondence'],['diagonal','Künneth projector','diagonal decomposition'],['Künneth projector','Hodge decomposition','Künneth/Hodge compatibility'],['Lefschetz operator','Hodge decomposition','Lefschetz theorem'],['Hodge locus','Hodge class','type-(p,p) locus'],['Hilbert scheme','algebraic cycle','parameterizes subschemes'],['deformation','Hodge locus','variation of Hodge structure'],['specialization','algebraic cycle','specialization of cycles'],['Frobenius','Tate class','Frobenius eigenspace'],['Tate class','cycle class','Tate-type comparison'],['periods','Hodge locus','period conditions'],['Abel–Jacobi','algebraic cycle','cycle invariant'],['pushforward','cycle class','functoriality'],['pullback','cycle class','functoriality']
+];
+for(const c of concepts)S.weights[c]=1;
+const critical=[['Hodge class','algebraic cycle'],['Tate class','cycle class'],['Hodge locus','algebraic cycle'],['periods','algebraic cycle']];
+function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(x){Object.assign(S,x);S.seen=new Set(x.seen||[]);S.running=false}}catch(e){}}function save(){localStorage.setItem(KEY,JSON.stringify({...S,seen:[...S.seen].slice(-200000)}))}
+function h(x){let z=2166136261;for(let c of x){z^=c.charCodeAt(0);z=Math.imul(z,16777619)}return (z>>>0).toString(16)}
+function pickWeighted(){let a=Object.entries(S.weights),sum=a.reduce((q,x)=>q+x[1],0),r=Math.random()*sum;for(const [k,v] of a){r-=v;if(r<=0)return k}return a[0][0]}
+function addLog(t,c=''){S.log.unshift({t,c});S.log=S.log.slice(0,150)}
+function verify(chain){
+ let ok=true,lines=[];
+ for(let i=0;i<chain.length-1;i++){let a=chain[i],b=chain[i+1],r=rules.find(x=>x[0]===a&&x[1]===b);if(r){lines.push('✓ '+a+'  ⇒  '+b+'   ['+r[2]+']');S.lemmas++}else{lines.push('· '+a+'  ⇒  '+b+'   [non verificato]');ok=false}}
+ return {ok,lines};
+}
+function searchOne(){
+ S.tries++;let start=pickWeighted(), chain=[start];let len=3+Math.floor(Math.random()*6);
+ for(let i=1;i<len;i++){let options=rules.filter(r=>r[0]===chain[i-1]).map(r=>r[1]);chain.push(options.length&&Math.random()<.82?options[Math.floor(Math.random()*options.length)]:pickWeighted())}
+ // occasional targeted bridge attempt
+ if(Math.random()<.18) chain=['Hodge class','cycle class','algebraic cycle'];
+ if(Math.random()<.10) chain=['Hodge locus','algebraic cycle'];
+ const key=h(chain.join('→'));if(S.seen.has(key)){S.dup++;return}S.seen.add(key);S.unique++;
+ const v=verify(chain);let bridge=chain.includes('Hodge class')&&chain.includes('algebraic cycle');let score=(v.ok?18:0)+(bridge?25:0)+chain.filter((x,i)=>i&&rules.some(r=>r[0]===chain[i-1]&&r[1]===x)).length*3;
+ if(score>=30){S.candidates++;S.best.push({score,chain:[...chain],verified:v.ok});S.best.sort((a,b)=>b.score-a.score);S.best=S.best.slice(0,30);chain.forEach(x=>S.weights[x]=Math.min(50,S.weights[x]+.08));addLog('⭐ Candidato: '+chain.join(' → ')+' | score '+score+(v.ok?' | VERIFICATO':' | gap'));}
+ if(v.ok)chain.forEach(x=>S.weights[x]=Math.min(50,S.weights[x]+.03)); else chain.forEach(x=>S.weights[x]=Math.max(.15,S.weights[x]-.006));
+ // Actual proof condition is deliberately strict: a fully verified path that starts at Hodge class and reaches algebraic cycle.
+ if(v.ok&&chain[0]==='Hodge class'&&chain.at(-1)==='algebraic cycle'){S.proofs++;S.events.unshift({type:'PROVA CANDIDATA',chain:[...chain],lines:v.lines});addLog('🚨 PROVA CANDIDATA trovata — verificare indipendentemente.');}
+}
+function render(){
+ $('tr').textContent=S.tries.toLocaleString();$('un').textContent=S.unique.toLocaleString();$('du').textContent=S.dup.toLocaleString();$('le').textContent=S.lemmas.toLocaleString();$('ca').textContent=S.candidates.toLocaleString();$('pr').textContent=S.proofs.toLocaleString();$('state').textContent=S.running?'RICERCA':'PAUSA';$('state').className='pill '+(S.running?'ok':'');$('fill').style.width=Math.min(100,(S.unique%10000)/100)+'%';
+ $('best').innerHTML=S.best.slice(0,12).map(x=>`<div class="row ${x.verified?'good':'hot'}"><b>${x.score}</b> · ${x.chain.join(' → ')}<div class="m">${x.verified?'Tutti i passaggi nel grafo locale risultano verificati':'Contiene almeno un passaggio non verificato'}</div></div>`).join('')||'<div class="m">Ancora nessuna pista.</div>';
+ $('strategies').innerHTML=Object.entries(S.weights).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([k,v])=>`<div class="row">${k}<span style="float:right">${v.toFixed(2)}</span></div>`).join('');
+ $('events').innerHTML=S.events.slice(0,10).map(e=>`<div class="row bad"><b>${e.type}</b><br>${e.chain.join(' → ')}</div>`).join('')||'<div class="m">Nessun evento.</div>';
+ $('log').innerHTML=S.log.slice(0,60).map(x=>`<div class="row">${x.t}</div>`).join('');
+ const last=S.best[0];$('proof').textContent=last?('Pista: '+last.chain.join(' → ')+'\n\n'+(verify(last.chain).lines.join('\n'))):'—';
+}
+let last=performance.now(),lastN=0;
+function loop(){if(!S.running)return;for(let i=0;i<80;i++)searchOne();let now=performance.now();$('rate').textContent=Math.round((S.tries-lastN)/Math.max(.1,(now-last)/1000))+'/s';last=now;lastN=S.tries;render();if(S.tries%1000<80)save();requestAnimationFrame(loop)}
+$('go').onclick=()=>{if(!S.running){S.running=true;addLog('▶ Ricerca avviata');loop()}};$('pause').onclick=()=>{S.running=false;save();addLog('⏸ Ricerca in pausa');render()};
+$('burst').onclick=()=>{for(let i=0;i<10000;i++)searchOne();save();addLog('⚡ 10.000 prove completate');render()};
+$('deep').onclick=()=>{for(let i=0;i<100000;i++)searchOne();save();addLog('🧬 Deep search: 100.000 prove completate');render()};
+$('reset').onclick=()=>{if(confirm('Azzerare memoria, grafi e risultati?')){localStorage.removeItem(KEY);location.reload()}};
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({...S,seen:[...S.seen]},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='hodge-probe-state.json';a.click();URL.revokeObjectURL(a.href)};
+$('import').onclick=()=>$('file').click();$('file').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);Object.assign(S,x);S.seen=new Set(x.seen||[]);save();render()}catch(err){alert('File non valido')}};r.readAsText(f)};
+load();render();addLog('🧠 Motore caricato. Memoria persistente: '+S.unique.toLocaleString()+' stati.');render();
+})();
+</script></body></html>
